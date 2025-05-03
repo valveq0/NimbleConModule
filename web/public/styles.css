@@ -13,20 +13,6 @@ canvas {
     height: 400px; /* Match the fixed container height */
 }
 
-/*#playbackCanvas {*/
-/*    pointer-events: none;*/
-/*}*/
-/*#waveformCanvas {*/
-/*    pointer-events: none;*/
-/*}*/
-/*#interactionCanvas {*/
-/*    pointer-events: auto; !* Ensure clicks work here *!*/
-/*}*/
-
-/*#waveform > * {*/
-/*    pointer-events: auto;*/
-/*}*/
-
 body {
     margin: 0;
     padding: 0;
@@ -68,11 +54,21 @@ audio {
 #greenValueDisplay {
     position: absolute;
     top: 10px;
-    left: 140px;
+    left: 180px;
     color: green;
     background-color: white;
     padding: 5px;
     border: 1px solid green;
+    z-index: 10; /* Ensure it appears above the canvases */
+}
+#blueValueDisplay {
+    position: absolute;
+    top: 10px;
+    left: 360px;
+    color: blue;
+    background-color: white;
+    padding: 5px;
+    border: 1px solid blue;
     z-index: 10; /* Ensure it appears above the canvases */
 }
 #overlayContainer canvas {

@@ -1,7 +1,8 @@
 import WaveSurfer from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js'
 import TimelinePlugin from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/plugins/timeline.esm.js'
 import {saveStateToLocalStorage} from "./save-load.js";
-import {sendPositionUpdate} from "./outputs";
+import {sendPositionUpdate} from "./outputs.js";
+import {DRAW_WINDOW_HEIGHT, MAX_AMPLITUDE, MAX_FREQUENCY, PAYLOAD_FREQUENCY} from "./constants.js";
 
 const waveformCanvas = document.getElementById("waveformCanvas");
 const waveformWrapper = document.getElementById('waveformWrapper');
@@ -12,16 +13,19 @@ const modeToggleButton = document.getElementById("modeToggleButton");
 const actionToggleButton = document.getElementById("actionToggleButton");
 const colorRedButton = document.getElementById("colorRedButton");
 const colorGreenButton = document.getElementById("colorGreenButton");
+const colorBlueButton = document.getElementById("colorBlueButton");
 const fileInput = document.getElementById("fileUpload");
 
 const COLORS = {
     "red": ["red", "rgba(255, 0, 0, 0.3)"],
-    "green": ["green", "rgba(0, 255, 0, 0.3)"]
+    "green": ["green", "rgba(0, 255, 0, 0.3)"],
+    "blue": ["blue", "rgba(0, 0, 255, 0.3)"]
 };
 
 export let stateData = {
     "red": [],
     "green": [],
+    "blue": [],
 };
 let drawMode = false;
 let addMode = true;
@@ -125,10 +129,10 @@ export function drawInteraction() {
 
         // Draw the shaded fill
         interactionCtx.beginPath();
-        interactionCtx.moveTo(0, height - (impliedStart.y / 1023) * height);
+        interactionCtx.moveTo(0, height - (impliedStart.y / DRAW_WINDOW_HEIGHT) * height);
         allPoints.forEach(point => {
             const x = timeToX(point.x);
-            const y = height - (point.y / 1023) * height;
+            const y = height - (point.y / DRAW_WINDOW_HEIGHT) * height;
             interactionCtx.lineTo(x, y);
         });
         interactionCtx.lineTo(width, height);
@@ -140,7 +144,7 @@ export function drawInteraction() {
         // Draw the lines and points
         allPoints.forEach((point, index) => {
             const x = timeToX(point.x);
-            const y = height - (point.y / 1023) * height;
+            const y = height - (point.y / DRAW_WINDOW_HEIGHT) * height;
 
             // Draw dot
             interactionCtx.beginPath();
@@ -152,7 +156,7 @@ export function drawInteraction() {
             if (index < allPoints.length - 1) {
                 const nextPoint = allPoints[index + 1];
                 const nextX = timeToX(nextPoint.x);
-                const nextY = height - (nextPoint.y / 1023) * height;
+                const nextY = height - (nextPoint.y / DRAW_WINDOW_HEIGHT) * height;
                 interactionCtx.beginPath();
                 interactionCtx.moveTo(x, y);
                 interactionCtx.lineTo(nextX, nextY);
@@ -184,7 +188,7 @@ function removePoint(clickX, clickY) {
     const height = interactionCanvas.height;
     const closestIndex = stateData[currentColor].findIndex(point => {
         const x = timeToX(point.x);
-        const y = height - (point.y / 1023) * height;
+        const y = height - (point.y / DRAW_WINDOW_HEIGHT) * height;
         const distance = Math.sqrt((clickX - x) ** 2 + (clickY - y) ** 2);
         return distance < 10;
     });
@@ -226,19 +230,24 @@ actionToggleButton.addEventListener("click", () => {
 
 colorRedButton.addEventListener("click", () => currentColor = "red");
 colorGreenButton.addEventListener("click", () => currentColor = "green");
+colorBlueButton.addEventListener("click", () => currentColor = "blue");
 
 function sendValues() {
     const currentTime = wavesurfer.getCurrentTime();
-    sendPositionUpdate(getCurrentValue(currentTime, 'red'), getCurrentValue(currentTime, 'green'), 0,0);
+    sendPositionUpdate(getCurrentValue(currentTime, 'red'), getCurrentValue(currentTime, 'green'), getCurrentValue(currentTime, 'blue'), currentTime, 0,0);
 }
 
-setInterval(sendValues, 1000);
+setInterval(sendValues, 1000/PAYLOAD_FREQUENCY);
 
 wavesurfer.on('interaction', () => wavesurfer.play());
 
 wavesurfer.on("timeupdate", (currentTime) => {
-    document.getElementById("redValueDisplay").innerText = `Red value: ${getCurrentValue(currentTime, 'red')}`;
-    document.getElementById("greenValueDisplay").innerText = `Green value: ${getCurrentValue(currentTime, 'green')}`;
+    let redFrequency = (getCurrentValue(currentTime, 'red') / DRAW_WINDOW_HEIGHT) * MAX_FREQUENCY;
+    let greenAmplitude = (getCurrentValue(currentTime, 'green') / DRAW_WINDOW_HEIGHT) * 100;
+
+    document.getElementById("redValueDisplay").innerText = `Frequency: ${redFrequency.toFixed(2)} Hz`;
+    document.getElementById("greenValueDisplay").innerText = `Amplitude: ${greenAmplitude.toFixed(2)}%`;
+    document.getElementById("blueValueDisplay").innerText = `Force: ${getCurrentValue(currentTime, 'blue')}`;
     drawInteraction();
 });
 
@@ -273,7 +282,7 @@ interactionCanvas.addEventListener("mousedown", (event) => {
     const clickY = event.clientY - rect.top;
 
     const timestamp = xToTime(clickX);
-    const value = 1023 - (clickY / interactionCanvas.height) * 1023;
+    const value = DRAW_WINDOW_HEIGHT - (clickY / interactionCanvas.height) * DRAW_WINDOW_HEIGHT;
 
     if (addMode) {
         // Check if clicking near existing point to drag
@@ -298,7 +307,7 @@ interactionCanvas.addEventListener("mousemove", (event) => {
     const moveY = event.clientY - rect.top;
 
     const timestamp = xToTime(moveX);
-    const value = 1023 - (moveY / interactionCanvas.height) * 1023;
+    const value = DRAW_WINDOW_HEIGHT - (moveY / interactionCanvas.height) * DRAW_WINDOW_HEIGHT;
 
     if (isDragging && draggedPoint) {
         // Update dragged point
@@ -340,7 +349,7 @@ function findClosestPoint(clickX, clickY, color) {
     const threshold = 10; // pixels
     for (const point of stateData[color]) {
         const px = timeToX(point.x);
-        const py = height - (point.y / 1023) * height;
+        const py = height - (point.y / DRAW_WINDOW_HEIGHT) * height;
         const distance = Math.sqrt((clickX - px) ** 2 + (clickY - py) ** 2);
         if (distance < threshold) {
             return point;

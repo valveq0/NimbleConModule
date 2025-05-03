@@ -2,3 +2,5 @@
 **/debug.cfg
 **/esp32.svd
 */node_modules/
+*/.DS_Store
+.idea/

@@ -1,16 +1,20 @@
-const PAYLOAD_ADDR = "http://0.0.0.0:7070";
+import {MAX_AMPLITUDE, MAX_FREQUENCY, PAYLOAD_ADDR} from "./constants.js";
 
-export function sendPositionUpdate(positionValue, forceValue, airOut, airIn) {
-    // Signals to the actuator
-    // long positionCommand; // (range: -1000 to 1000)
-    // long forceCommand;  // (range: 0 to 1023)
-    // bool activated; // Not used
-    // bool airOut;  // Set high to open air-out valve
-    // bool airIn;   // Set high to open air-in valve
-    const buffer = new ArrayBuffer(3);
+
+export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn) {
+    // Normalize speedValue to get frequency in Hz
+    const frequency = (speedValue / 1023) * MAX_FREQUENCY;
+
+    // Normalize amplitudeValue to get amplitude in range (-1000 to 1000)
+    const amplitude = (amplitudeValue / 1023) * MAX_AMPLITUDE;
+
+    // Calculate positionCommand using sine wave
+    const positionCommand = Math.round(amplitude * Math.sin(2 * Math.PI * frequency * currentTimeS));
+
+    const buffer = new ArrayBuffer(5);
     const view = new DataView(buffer);
-    view.setInt16(0, positionValue);
-    view.setInt16(1, forceValue);
+    view.setInt16(0, positionCommand);
+    view.setInt16(2, forceValue);
 
     let boolArr = 0;
     if (airOut) {
@@ -19,9 +23,10 @@ export function sendPositionUpdate(positionValue, forceValue, airOut, airIn) {
     if (airIn) {
         boolArr += 1 << 1;
     }
-    view.setUint8(2, boolArr);
+    view.setUint8(4, boolArr);
+    console.log("Sending out these values", positionCommand, forceValue, airOut, airIn);
 
-    // Send it via POST
+    //Send it via POST
     fetch(PAYLOAD_ADDR, {
         method: 'POST',
         headers: {

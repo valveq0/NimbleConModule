@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waveform Player</title>
+    <title>Nimble Programmer</title>
 </head>
 <body>
-<h1>Waveform Player</h1>
+<h1>Nimble Audio Programmer</h1>
 
 <!-- Add inside your body somewhere -->
 <input type="file" id="fileUpload" accept="audio/*" />
@@ -15,15 +15,17 @@
 <button id="loadButton">Load State</button>
 
 
-<div id="redValueDisplay">Red value: 0</div>
-<div id="greenValueDisplay">Green value: 0</div>
+<div id="redValueDisplay">Frequency: 0 Hz</div>
+<div id="greenValueDisplay">Amplitude: 0%</div>
+<div id="blueValueDisplay">Force: 0</div>
 
 <!-- Buttons for color selection -->
 <div class="controls">
     <button id="modeToggleButton">Switch to Draw Mode</button>
     <button id="actionToggleButton">Switch to Delete Points</button>
-    <button id="colorRedButton" style="background-color: red; color: white;">Select Red</button>
-    <button id="colorGreenButton" style="background-color: green; color: white;">Select Green</button>
+    <button id="colorRedButton" style="background-color: red; color: white;">Draw Frequency</button>
+    <button id="colorGreenButton" style="background-color: green; color: white;">Draw Amplitude</button>
+    <button id="colorBlueButton" style="background-color: blue; color: white;">Draw Force</button>
 </div>
 
 <label>
