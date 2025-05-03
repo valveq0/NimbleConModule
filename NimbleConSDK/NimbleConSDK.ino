@@ -85,13 +85,40 @@ void loop() {
 
   WiFiClient client = server.available();   // Listen for incoming clients
 
+  // Serial.println("check for client");
+
   if (client) {                             // If a new client connects,
+
+    Serial.println("client connected");
     currentTime = millis();
     previousTime = currentTime;
     Serial.println("New Client.");          // print a message out in the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
+
     while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
       currentTime = millis();
+
+      // String request = "";
+      // while(client.available()) {
+      //   char c = client.read();
+      //   Serial.write(c);
+      //   request += c;
+      //   if (request.endsWith("\r\n\r\n")) break;
+      // }
+
+      // int contentLength = 4;
+
+      // uint8_t payload[contentLength];
+      // int bytesRead = 0;
+      // while (bytesRead < 4 && client.available()) {
+      //   payload[bytesRead++] = client.read();
+      // }
+
+      // uint16_t command = (payload[0] << 8) | payload[1];
+      // uint16_t value   = (payload[2] << 8) | payload[3];
+
+      // Serial.printf("Received command: 0x%04X, value; 0x%04X\n", command, value);
+
       if (client.available()) {             // if there's bytes to read from the client,
         char c = client.read();             // read a byte, then
         Serial.write(c);                    // print it out the serial monitor
@@ -100,6 +127,23 @@ void loop() {
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
+
+            int contentLength = 4;
+
+            uint8_t payload[contentLength];
+            int bytesRead = 0;
+            while (bytesRead < contentLength && client.available()) {
+              payload[bytesRead++] = client.read();
+              Serial.println("bytesRead loop");
+            }
+
+            Serial.println("out of bytesRead loop");
+
+            uint16_t command = (payload[0] << 8) | payload[1];
+            uint16_t value   = (payload[2] << 8) | payload[3];
+
+            Serial.printf("Received command: 0x%04X, value; 0x%04X\n", command, value);
+            
             // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
             // and a content-type so the client knows what's coming, then a blank line:
             client.println("HTTP/1.1 200 OK");
@@ -123,6 +167,7 @@ void loop() {
 
             // The HTTP response ends with another blank line
             client.println();
+
             // Break out of the while loop
             break;
           } else { // if you got a newline, then clear currentLine
@@ -133,6 +178,7 @@ void loop() {
         }
       }
     }
+
     // Clear the header variable
     header = "";
     // Close the connection

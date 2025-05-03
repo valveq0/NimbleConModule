@@ -1,5 +1,11 @@
 import {MAX_AMPLITUDE, MAX_FREQUENCY, PAYLOAD_ADDR} from "./constants.js";
 
+// Helper function to convert ArrayBuffer to hex string
+function bufferToHex(buffer) {
+    return Array.from(new Uint8Array(buffer))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join(' ');
+}
 
 export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn) {
     // Normalize speedValue to get frequency in Hz
@@ -23,11 +29,15 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
     if (airIn) {
         boolArr += 1 << 1;
     }
+    view.setUint8(3, boolArr);
     view.setUint8(4, boolArr);
     console.log("Sending out these values", positionCommand, forceValue, airOut, airIn);
 
+    console.log('Hex Payload:', bufferToHex(buffer));
+
     //Send it via POST
     fetch(PAYLOAD_ADDR, {
+        mode: 'no-cors',
         method: 'POST',
         headers: {
             'Content-Type': 'application/octet-stream'
