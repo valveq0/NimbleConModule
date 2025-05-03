@@ -229,11 +229,6 @@ colorGreenButton.addEventListener("click", () => currentColor = "green");
 
 function sendValues() {
     const currentTime = wavesurfer.getCurrentTime();
-    const payload = {
-        redValue: getCurrentValue(currentTime, 'red'),
-        greenValue: getCurrentValue(currentTime, 'green'),
-        timestamp: currentTime
-    };
     sendPositionUpdate(getCurrentValue(currentTime, 'red'), getCurrentValue(currentTime, 'green'), 0,0);
 }
 
