@@ -1,4 +1,11 @@
-const PAYLOAD_ADDR = "http://0.0.0.0:7070";
+const PAYLOAD_ADDR = "http://192.168.8.10:80";
+
+// Helper function to convert ArrayBuffer to hex string
+function bufferToHex(buffer) {
+    return Array.from(new Uint8Array(buffer))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join(' ');
+}
 
 export function sendPositionUpdate(positionValue, forceValue, airOut, airIn) {
     // Signals to the actuator
@@ -7,10 +14,10 @@ export function sendPositionUpdate(positionValue, forceValue, airOut, airIn) {
     // bool activated; // Not used
     // bool airOut;  // Set high to open air-out valve
     // bool airIn;   // Set high to open air-in valve
-    const buffer = new ArrayBuffer(3);
+    const buffer = new ArrayBuffer(4);
     const view = new DataView(buffer);
-    view.setInt16(0, positionValue);
-    view.setInt16(1, forceValue);
+    view.setInt16(0, positionValue, true);
+    view.setInt16(2, forceValue, true);
 
     let boolArr = 0;
     if (airOut) {
@@ -19,10 +26,12 @@ export function sendPositionUpdate(positionValue, forceValue, airOut, airIn) {
     if (airIn) {
         boolArr += 1 << 1;
     }
-    view.setUint8(2, boolArr);
+    view.setUint8(3, boolArr);
 
-    // Send it via POST
+    console.log('Hex Payload:', bufferToHex(buffer));
+
     fetch(PAYLOAD_ADDR, {
+        mode: 'no-cors',
         method: 'POST',
         headers: {
             'Content-Type': 'application/octet-stream'
