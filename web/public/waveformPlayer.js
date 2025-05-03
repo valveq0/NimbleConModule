@@ -1,7 +1,7 @@
 import WaveSurfer from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js'
 import TimelinePlugin from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/plugins/timeline.esm.js'
 import {saveStateToLocalStorage} from "./save-load.js";
-import {sendPositionUpdate} from "./outputs";
+import {sendPositionUpdate} from "./outputs.js";
 
 const waveformCanvas = document.getElementById("waveformCanvas");
 const waveformWrapper = document.getElementById('waveformWrapper');
