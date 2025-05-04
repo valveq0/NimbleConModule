@@ -45,6 +45,55 @@ void initWiFi() {
   Serial.println(WiFi.localIP());
 }
 
+void serveWebserverHomepage(WiFiClient client) {
+    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+    // and a content-type so the client knows what's coming, then a blank line:
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-type:text/html");
+    client.println("Connection: close");
+    client.println();
+
+    // Display the HTML web page
+    client.println("<!DOCTYPE html><html>");
+    client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    client.println("<link rel=\"icon\" href=\"data:,\">");
+    // CSS to style the on/off buttons
+    // Feel free to change the background-color and font-size attributes to fit your preferences
+    client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+    client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
+    client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+    client.println(".button2 {background-color: #555555;}</style></head>");
+
+    // Web Page Heading
+    client.println("<body><h1>ESP32 Web Server</h1>");
+
+    // The HTTP response ends with another blank line
+    client.println();
+}
+
+Pendant readPayload(WiFiClient& client) {
+    Pendant pendant = {};
+    uint8_t payload[5];    // We expect exactly 5 bytes
+    int bytesRead = 0;
+
+    while (bytesRead < contentLength && client.available()) {
+    payload[bytesRead++] = client.read();
+    }
+
+    int16_t posCmd = (payload[0] << 8) | payload[1];
+    int16_t forceCmd = (payload[2] << 8) | payload[3];
+    uint8_t flags = payload[4];
+
+    pendant.positionCommand = posCmd;
+    pendant.forceCommand = forceCmd;
+    pendant.activated = true;
+    pendant.airOut = flags & 0x01;
+    pendant.airIn  = flags & 0x02;
+
+    return pendant;
+}
+
+
 void setup() {
   // put your setup code here, to run once:
   
@@ -85,8 +134,6 @@ void loop() {
 
   WiFiClient client = server.available();   // Listen for incoming clients
 
-  // Serial.println("check for client");
-
   if (client) {                             // If a new client connects,
 
     Serial.println("client connected");
@@ -98,75 +145,17 @@ void loop() {
     while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
       currentTime = millis();
 
-      // String request = "";
-      // while(client.available()) {
-      //   char c = client.read();
-      //   Serial.write(c);
-      //   request += c;
-      //   if (request.endsWith("\r\n\r\n")) break;
-      // }
-
-      // int contentLength = 4;
-
-      // uint8_t payload[contentLength];
-      // int bytesRead = 0;
-      // while (bytesRead < 4 && client.available()) {
-      //   payload[bytesRead++] = client.read();
-      // }
-
-      // uint16_t command = (payload[0] << 8) | payload[1];
-      // uint16_t value   = (payload[2] << 8) | payload[3];
-
-      // Serial.printf("Received command: 0x%04X, value; 0x%04X\n", command, value);
-
       if (client.available()) {             // if there's bytes to read from the client,
         char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        header += c;
+        header += c;                        // save, but for now ignore the header
         if (c == '\n') {                    // if the byte is a newline character
           // if the current line is blank, you got two newline characters in a row.
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
-
-            int contentLength = 4;
-
-            uint8_t payload[contentLength];
-            int bytesRead = 0;
-            while (bytesRead < contentLength && client.available()) {
-              payload[bytesRead++] = client.read();
-              Serial.println("bytesRead loop");
-            }
-
-            Serial.println("out of bytesRead loop");
-
-            uint16_t command = (payload[0] << 8) | payload[1];
-            uint16_t value   = (payload[2] << 8) | payload[3];
-
-            Serial.printf("Received command: 0x%04X, value; 0x%04X\n", command, value);
+            Pendant inputPendant = readPayload(client);
+            Serial.printf("Received position: 0x%04X, force: 0x%04X\n", inputPendant.positionCommand, inputPendant.forceCommand);
             
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
-
-            // Display the HTML web page
-            client.println("<!DOCTYPE html><html>");
-            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\">");
-            // CSS to style the on/off buttons 
-            // Feel free to change the background-color and font-size attributes to fit your preferences
-            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-            client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-            client.println(".button2 {background-color: #555555;}</style></head>");
-            
-            // Web Page Heading
-            client.println("<body><h1>ESP32 Web Server</h1>");
-
-            // The HTTP response ends with another blank line
-            client.println();
+            serveWebserverHomepage(client);
 
             // Break out of the while loop
             break;
