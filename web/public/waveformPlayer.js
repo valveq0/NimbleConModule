@@ -95,7 +95,6 @@ wavesurfer.getWrapper().addEventListener('scroll', () => {
     drawInteraction();
 });
 
-
 function xToTime(x) {
     return visibleStartTime + (x / currentPxPerSec);
 }
@@ -198,15 +197,31 @@ function removePoint(clickX, clickY) {
     }
 }
 
-waveformWrapper.addEventListener("wheel", (e) => {
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        e.preventDefault(); // Stop page from scrolling horizontally
+waveformWrapper.addEventListener('wheel', (e) => {
+    // Prevent default browser behavior, including swipe-back/forward
+    e.preventDefault();
 
-        const currentScroll = wavesurfer.getWrapper().scrollLeft;
-        wavesurfer.getWrapper().scrollLeft = currentScroll + e.deltaX * 1.5;
+    const zoomSlider = document.querySelector('input[type="range"]');
+
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        // Zoom in/out
+        let zoom = parseInt(zoomSlider.value, 10);
+        zoom += e.deltaY > 0 ? -20 : 20;
+        zoom = Math.max(10, Math.min(1000, zoom));
+        zoomSlider.value = zoom;
+        zoomSlider.dispatchEvent(new Event('input'));
+    } else {
+        // Scroll left/right (scrub)
+        // this doesn't work?
+        const delta = e.deltaX;
+        const currentTime = wavesurfer.getCurrentTime();
+        const duration = wavesurfer.getDuration();
+        const seekOffset = delta * 0.002; // tune as needed
+        let newTime = currentTime + seekOffset;
+        newTime = Math.max(0, Math.min(duration, newTime));
+        wavesurfer.seekTo(newTime / duration);
     }
 }, { passive: false });
-
 
 modeToggleButton.addEventListener("click", () => {
     drawMode = !drawMode;
@@ -357,4 +372,3 @@ function findClosestPoint(clickX, clickY, color) {
     }
     return null;
 }
-

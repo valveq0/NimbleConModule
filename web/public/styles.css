@@ -19,17 +19,6 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
 }
-#canvasContainer {
-    position: relative;
-    width: 100%; /* Full width */
-    overflow: hidden;
-}
-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1; /* Default z-index */
-}
 audio {
     display: block;
     margin: 20px auto;
@@ -78,4 +67,3 @@ audio {
     height: 100%;
     width: 100%;
 }
-
