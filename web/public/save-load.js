@@ -43,6 +43,7 @@ export function loadStateFromLocalStorage() {
             const parsed = JSON.parse(saved);
             stateData.red = (parsed.red || []).sort((a, b) => a.time - b.time);
             stateData.green = (parsed.green || []).sort((a, b) => a.time - b.time);
+            stateData.blue = (parsed.blue || []).sort((a, b) => a.time - b.time);
             drawInteraction();
         } catch (e) {
             console.error("Error parsing saved state:", e);
