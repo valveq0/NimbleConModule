@@ -73,17 +73,19 @@ void serveWebserverHomepage(WiFiClient client) {
 
 Pendant readPayload(WiFiClient& client) {
     Pendant pendant = {};
-    uint8_t payload[5];    // We expect exactly 5 bytes
+    uint8_t payload[9];  // Expect exactly 9 bytes (4 for position, 4 for force, 1 for flags)
     int bytesRead = 0;
 
-    while (bytesRead < contentLength && client.available()) {
-    payload[bytesRead++] = client.read();
+    while (bytesRead < sizeof(payload) && client.available()) {
+        payload[bytesRead++] = client.read();
     }
 
-    int16_t posCmd = (payload[0] << 8) | payload[1];
-    int16_t forceCmd = (payload[2] << 8) | payload[3];
-    uint8_t flags = payload[4];
+    // Convert received bytes into 32-bit integers (assuming little-endian)
+    int32_t posCmd = payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24);
+    int32_t forceCmd = payload[4] | (payload[5] << 8) | (payload[6] << 16) | (payload[7] << 24);
+    uint8_t flags = payload[8];
 
+    // Assign to pendant structure
     pendant.positionCommand = posCmd;
     pendant.forceCommand = forceCmd;
     pendant.activated = true;

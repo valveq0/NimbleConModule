@@ -19,8 +19,8 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
 
     const buffer = new ArrayBuffer(5);
     const view = new DataView(buffer);
-    view.setInt16(0, positionCommand);
-    view.setInt16(2, forceValue);
+    view.setInt32(0, positionCommand);
+    view.setInt32(4, forceValue);
 
     let boolArr = 0;
     if (airOut) {
@@ -29,8 +29,7 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
     if (airIn) {
         boolArr += 1 << 1;
     }
-    view.setUint8(3, boolArr);
-    view.setUint8(4, boolArr);
+    view.setUint8(8, boolArr);
     console.log("Sending out these values", positionCommand, forceValue, airOut, airIn);
 
     console.log('Hex Payload:', bufferToHex(buffer));
