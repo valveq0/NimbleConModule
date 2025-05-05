@@ -17,7 +17,7 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
     // Calculate positionCommand using sine wave
     const positionCommand = Math.round(amplitude * Math.sin(2 * Math.PI * frequency * currentTimeS));
 
-    const buffer = new ArrayBuffer(5);
+    const buffer = new ArrayBuffer(9);
     const view = new DataView(buffer);
     view.setInt32(0, positionCommand);
     view.setInt32(4, forceValue);

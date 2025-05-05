@@ -45,7 +45,7 @@ void initWiFi() {
   Serial.println(WiFi.localIP());
 }
 
-void serveWebserverHomepage(WiFiClient client) {
+void serveWebserverHomepage(WiFiClient& client) {
     // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
     // and a content-type so the client knows what's coming, then a blank line:
     client.println("HTTP/1.1 200 OK");
