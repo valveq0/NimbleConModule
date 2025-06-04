@@ -2,6 +2,8 @@
 
 #include "WiFi.h"
 #include "nimbleCon.h"
+#include "ESPAsyncWebServer.h"
+#include "AsyncTCP.h"
 
 bool btLED = 0;
 
@@ -29,7 +31,7 @@ unsigned long previousTime = 0;
 const long timeoutTime = 2000;
 
 // Set web server port number to 80
-WiFiServer server(80);
+//WiFiServer server(80);
 
 // Variable to store the HTTP request
 String header;
@@ -136,6 +138,9 @@ Pendant readPayload(WiFiClient& client) {
 //   ledcWrite(11, 50);*/
 // }
 
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+
 void setup() {
   Serial.begin(115200);
 
@@ -153,6 +158,7 @@ void setup() {
   // Define WebSocket event handler
   ws.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client,
                 AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    Serial.println("Saw event");
     if (type == WS_EVT_CONNECT) {
       Serial.println("WebSocket client connected");
     } else if (type == WS_EVT_DISCONNECT) {
@@ -176,6 +182,7 @@ void setup() {
   server.addHandler(&ws);
   server.begin();
   Serial.println("WebSocket server started");
+  Serial.println(WiFi.localIP().toString() + "/ws");
 }
 
 void loop() {
@@ -183,88 +190,88 @@ void loop() {
   
   unsigned long currentMillis = millis();
   
-  // if WiFi is down, try reconnecting
-  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
-    Serial.print(millis());
-    Serial.println("Reconnecting to WiFi...");
-    WiFi.disconnect();
-    WiFi.reconnect();
-    previousMillis = currentMillis;
-  }
+  // // if WiFi is down, try reconnecting
+  // if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
+  //   Serial.print(millis());
+  //   Serial.println("Reconnecting to WiFi...");
+  //   WiFi.disconnect();
+  //   WiFi.reconnect();
+  //   previousMillis = currentMillis;
+  // }
 
-  WiFiClient client = server.available();   // Listen for incoming clients
+  // WiFiClient client = server.available();   // Listen for incoming clients
 
-  if (client) {                             // If a new client connects,
+  // if (client) {                             // If a new client connects,
 
-    //Serial.println("client connected");
-    currentTime = millis();
-    previousTime = currentTime;
-    //Serial.println("New Client.");          // print a message out in the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
+  //   //Serial.println("client connected");
+  //   currentTime = millis();
+  //   previousTime = currentTime;
+  //   //Serial.println("New Client.");          // print a message out in the serial port
+  //   String currentLine = "";                // make a String to hold incoming data from the client
 
-    while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
-      currentTime = millis();
+  //   while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
+  //     currentTime = millis();
 
-      if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        header += c;                        // save, but for now ignore the header
-        if (c == '\n') {                    // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
-          if (currentLine.length() == 0) {
-            Pendant inputPendant = readPayload(client);
-            //Serial.printf("Received position: 0x%04X, force: 0x%04X\n", inputPendant.positionCommand, inputPendant.forceCommand);
+  //     if (client.available()) {             // if there's bytes to read from the client,
+  //       char c = client.read();             // read a byte, then
+  //       header += c;                        // save, but for now ignore the header
+  //       if (c == '\n') {                    // if the byte is a newline character
+  //         // if the current line is blank, you got two newline characters in a row.
+  //         // that's the end of the client HTTP request, so send a response:
+  //         if (currentLine.length() == 0) {
+  //           Pendant inputPendant = readPayload(client);
+  //           //Serial.printf("Received position: 0x%04X, force: 0x%04X\n", inputPendant.positionCommand, inputPendant.forceCommand);
             
-            serveWebserverHomepage(client);
+  //           serveWebserverHomepage(client);
 
-            // Break out of the while loop
-            break;
-          } else { // if you got a newline, then clear currentLine
-            currentLine = "";
-          }
-        } else if (c != '\r') {  // if you got anything else but a carriage return character,
-          currentLine += c;      // add it to the end of the currentLine
-        }
-      }
-    }
+  //           // Break out of the while loop
+  //           break;
+  //         } else { // if you got a newline, then clear currentLine
+  //           currentLine = "";
+  //         }
+  //       } else if (c != '\r') {  // if you got anything else but a carriage return character,
+  //         currentLine += c;      // add it to the end of the currentLine
+  //       }
+  //     }
+  //   }
 
-    // Clear the header variable
-    header = "";
-    // Close the connection
-    client.stop();
-    // Serial.println("Client disconnected.");
-    // Serial.println("");
-  }
+  //   // Clear the header variable
+  //   header = "";
+  //   // Close the connection
+  //   client.stop();
+  //   // Serial.println("Client disconnected.");
+  //   // Serial.println("");
+  // }
 
   // ***************** Do stuff to the values to be sent below this line. Use no delays.
   
-  // Check actuator and pendant serial ports for complete packets and update structs.
-  if(readFromPend())  // Read values from pendant. If the function returns true, the values were updated so update the pass-through values.
-  { // DEMO: Pass through data from pendant to actuator
-    actuator.positionCommand = pendant.positionCommand;
-    actuator.forceCommand = pendant.forceCommand;
-    actuator.airIn = pendant.airIn;
-    actuator.airOut = pendant.airOut;
-    actuator.activated = pendant.activated;
-  }
+  // // Check actuator and pendant serial ports for complete packets and update structs.
+  // if(readFromPend())  // Read values from pendant. If the function returns true, the values were updated so update the pass-through values.
+  // { // DEMO: Pass through data from pendant to actuator
+  //   actuator.positionCommand = pendant.positionCommand;
+  //   actuator.forceCommand = pendant.forceCommand;
+  //   actuator.airIn = pendant.airIn;
+  //   actuator.airOut = pendant.airOut;
+  //   actuator.activated = pendant.activated;
+  // }
   
   readFromAct(); // Read values from actuator. If the function returns true, the values were updated. Otherwise there was nothing new.
 
-  // This DEMO code pauses the actuator (in a very crude way) when the encoder button is pressed (it will jump to whatever position the pendant is commanding at the moment the button is released)
-  if(digitalRead(ENC_BUTT)) // Encoder button reads low when pressed.
-  {
-    driveLEDs(encoder.getCount());  // Show LEDs as demo
-  }else
-  {
-    driveLEDs(0);   // Blank LEDs when button is pressed
-    actuator.forceCommand = 0;  // Set force command to 0 when button is pressed.
-  }
+  // // This DEMO code pauses the actuator (in a very crude way) when the encoder button is pressed (it will jump to whatever position the pendant is commanding at the moment the button is released)
+  // if(digitalRead(ENC_BUTT)) // Encoder button reads low when pressed.
+  // {
+  //   driveLEDs(encoder.getCount());  // Show LEDs as demo
+  // }else
+  // {
+  //   driveLEDs(0);   // Blank LEDs when button is pressed
+  //   actuator.forceCommand = 0;  // Set force command to 0 when button is pressed.
+  // }
 
 // ***************** Do stuff to the values to be sent above this line. Use no delays.
 
   // Check if it's time to send a packet.
   if(checkTimer()) sendToAct();
   
-  pendant.present ? ledcWrite(PEND_LED, 50) : ledcWrite(PEND_LED, 0);  // Display pendant connection status on LED.
-  actuator.present ? ledcWrite(ACT_LED, 50) : ledcWrite(ACT_LED, 0);  // Display actuator connection status on LED.
+  // pendant.present ? ledcWrite(PEND_LED, 50) : ledcWrite(PEND_LED, 0);  // Display pendant connection status on LED.
+  // actuator.present ? ledcWrite(ACT_LED, 50) : ledcWrite(ACT_LED, 0);  // Display actuator connection status on LED.
 }

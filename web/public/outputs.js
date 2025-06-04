@@ -7,7 +7,7 @@ function bufferToHex(buffer) {
         .join(' ');
 }
 
-export const socket = new WebSocket("ws:192.168.1.10/ws");
+export const socket = new WebSocket("ws://192.168.1.10/ws");
 
 export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn, isPaused) {
     // Normalize speedValue to get frequency in Hz
@@ -35,9 +35,9 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
         boolArr += 1 << 1;
     }
     view.setUint8(8, boolArr);
-    console.log("Sending out these values", positionCommand, forceValue, airOut, airIn);
-
-    console.log('Hex Payload:', bufferToHex(buffer));
+    // console.log("Sending out these values", positionCommand, forceValue, airOut, airIn);
+    //
+    // console.log('Hex Payload:', bufferToHex(buffer));
 
     //Send it via POST
     // fetch(PAYLOAD_ADDR, {
@@ -53,5 +53,6 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
     //     .catch(error => console.error('Error:', error));
     if(socket.readyState === WebSocket.OPEN) {
         socket.send(buffer);
+        console.log("Sending out these values", positionCommand, forceValue, airOut);
     }
 }
