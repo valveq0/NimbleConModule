@@ -15,6 +15,7 @@ const colorRedButton = document.getElementById("colorRedButton");
 const colorGreenButton = document.getElementById("colorGreenButton");
 const colorBlueButton = document.getElementById("colorBlueButton");
 const fileInput = document.getElementById("fileUpload");
+let isPaused = false;
 
 const COLORS = {
     "red": ["red", "rgba(255, 0, 0, 0.3)"],
@@ -264,6 +265,14 @@ wavesurfer.on("timeupdate", (currentTime) => {
     document.getElementById("greenValueDisplay").innerText = `Amplitude: ${greenAmplitude.toFixed(2)}%`;
     document.getElementById("blueValueDisplay").innerText = `Force: ${getCurrentValue(currentTime, 'blue')}`;
     drawInteraction();
+});
+
+wavesurfer.on('pause', () => {
+    isPaused = true;
+});
+
+wavesurfer.on('play', () => {
+    isPaused = false;
 });
 
 wavesurfer.once('decode', () => {

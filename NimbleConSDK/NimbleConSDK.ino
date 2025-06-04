@@ -48,27 +48,27 @@ void initWiFi() {
 void serveWebserverHomepage(WiFiClient& client) {
     // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
     // and a content-type so the client knows what's coming, then a blank line:
-    client.println("HTTP/1.1 200 OK");
-    client.println("Content-type:text/html");
-    client.println("Connection: close");
-    client.println();
+    // client.println("HTTP/1.1 200 OK");
+    // client.println("Content-type:text/html");
+    // client.println("Connection: close");
+    // client.println();
 
-    // Display the HTML web page
-    client.println("<!DOCTYPE html><html>");
-    client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    client.println("<link rel=\"icon\" href=\"data:,\">");
-    // CSS to style the on/off buttons
-    // Feel free to change the background-color and font-size attributes to fit your preferences
-    client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-    client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-    client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-    client.println(".button2 {background-color: #555555;}</style></head>");
+    // // Display the HTML web page
+    // client.println("<!DOCTYPE html><html>");
+    // client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    // client.println("<link rel=\"icon\" href=\"data:,\">");
+    // // CSS to style the on/off buttons
+    // // Feel free to change the background-color and font-size attributes to fit your preferences
+    // client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+    // client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
+    // client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+    // client.println(".button2 {background-color: #555555;}</style></head>");
 
-    // Web Page Heading
-    client.println("<body><h1>ESP32 Web Server</h1>");
+    // // Web Page Heading
+    // client.println("<body><h1>ESP32 Web Server</h1>");
 
     // The HTTP response ends with another blank line
-    client.println();
+   // client.println();
 }
 
 Pendant readPayload(WiFiClient& client) {
@@ -81,16 +81,32 @@ Pendant readPayload(WiFiClient& client) {
     }
 
     // Convert received bytes into 32-bit integers (assuming little-endian)
-    int32_t posCmd = payload[0] | (payload[1] << 8) | (payload[2] << 16) | (payload[3] << 24);
-    int32_t forceCmd = payload[4] | (payload[5] << 8) | (payload[6] << 16) | (payload[7] << 24);
+    int32_t posCmd;
+    int32_t forceCmd;
+    memcpy(&posCmd, &payload[0], 4);
+    memcpy(&forceCmd, &payload[4], 4);
+
+    //int32_t forceCmd = payload[4] | (payload[5] << 8) | (payload[6] << 16) | (payload[7] << 24);
     uint8_t flags = payload[8];
 
+
     // Assign to pendant structure
-    pendant.positionCommand = posCmd;
-    pendant.forceCommand = forceCmd;
-    pendant.activated = true;
-    pendant.airOut = flags & 0x01;
-    pendant.airIn  = flags & 0x02;
+    actuator.positionCommand = posCmd;
+    actuator.forceCommand = forceCmd;
+    actuator.activated = true;
+    actuator.airOut = flags & 0x01;
+    actuator.airIn  = flags & 0x02;
+
+    // for(int i =0; i<sizeof(payload); i++) {
+    //   Serial.print(payload[i]);
+    //   Serial.print(" ");
+    // }
+
+    // Serial.println();
+    // Serial.print("position command: ");
+    // Serial.println(actuator.positionCommand);
+    // Serial.print("force command: ");
+    // Serial.println(actuator.forceCommand);
 
     return pendant;
 }
@@ -138,10 +154,10 @@ void loop() {
 
   if (client) {                             // If a new client connects,
 
-    Serial.println("client connected");
+    //Serial.println("client connected");
     currentTime = millis();
     previousTime = currentTime;
-    Serial.println("New Client.");          // print a message out in the serial port
+    //Serial.println("New Client.");          // print a message out in the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
 
     while (client.connected() && currentTime - previousTime <= timeoutTime) {  // loop while the client's connected
@@ -155,7 +171,7 @@ void loop() {
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0) {
             Pendant inputPendant = readPayload(client);
-            Serial.printf("Received position: 0x%04X, force: 0x%04X\n", inputPendant.positionCommand, inputPendant.forceCommand);
+            //Serial.printf("Received position: 0x%04X, force: 0x%04X\n", inputPendant.positionCommand, inputPendant.forceCommand);
             
             serveWebserverHomepage(client);
 
@@ -174,8 +190,8 @@ void loop() {
     header = "";
     // Close the connection
     client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
+    // Serial.println("Client disconnected.");
+    // Serial.println("");
   }
 
   // ***************** Do stuff to the values to be sent below this line. Use no delays.

@@ -7,7 +7,7 @@ function bufferToHex(buffer) {
         .join(' ');
 }
 
-export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn) {
+export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn, isPaused) {
     // Normalize speedValue to get frequency in Hz
     const frequency = (speedValue / 1023) * MAX_FREQUENCY;
 
@@ -16,11 +16,14 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
 
     // Calculate positionCommand using sine wave
     const positionCommand = Math.round(amplitude * Math.sin(2 * Math.PI * frequency * currentTimeS));
+    if (isPaused) {
+        forceValue = 0;
+    }
 
     const buffer = new ArrayBuffer(9);
     const view = new DataView(buffer);
-    view.setInt32(0, positionCommand);
-    view.setInt32(4, forceValue);
+    view.setInt32(0, positionCommand, true);
+    view.setInt32(4, forceValue, true);
 
     let boolArr = 0;
     if (airOut) {
