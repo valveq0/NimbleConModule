@@ -46,29 +46,29 @@ void initWiFi() {
 }
 
 void serveWebserverHomepage(WiFiClient& client) {
-    // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-    // and a content-type so the client knows what's coming, then a blank line:
-    // client.println("HTTP/1.1 200 OK");
-    // client.println("Content-type:text/html");
-    // client.println("Connection: close");
-    // client.println();
+    //HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+    //and a content-type so the client knows what's coming, then a blank line:
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-type:text/html");
+    client.println("Connection: close");
+    client.println();
 
-    // // Display the HTML web page
-    // client.println("<!DOCTYPE html><html>");
-    // client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    // client.println("<link rel=\"icon\" href=\"data:,\">");
-    // // CSS to style the on/off buttons
-    // // Feel free to change the background-color and font-size attributes to fit your preferences
-    // client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
-    // client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
-    // client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
-    // client.println(".button2 {background-color: #555555;}</style></head>");
+    // Display the HTML web page
+    client.println("<!DOCTYPE html><html>");
+    client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+    client.println("<link rel=\"icon\" href=\"data:,\">");
+    // CSS to style the on/off buttons
+    // Feel free to change the background-color and font-size attributes to fit your preferences
+    client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+    client.println(".button { background-color: #4CAF50; border: none; color: white; padding: 16px 40px;");
+    client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+    client.println(".button2 {background-color: #555555;}</style></head>");
 
-    // // Web Page Heading
-    // client.println("<body><h1>ESP32 Web Server</h1>");
+    // Web Page Heading
+    client.println("<body><h1>ESP32 Web Server</h1>");
 
-    // The HTTP response ends with another blank line
-   // client.println();
+    //The HTTP response ends with another blank line
+   client.println();
 }
 
 Pendant readPayload(WiFiClient& client) {
@@ -112,28 +112,70 @@ Pendant readPayload(WiFiClient& client) {
 }
 
 
-void setup() {
-  // put your setup code here, to run once:
+// void setup() {
+//   // put your setup code here, to run once:
   
+//   Serial.begin(115200);
+
+//   // Configures static IP address
+//   if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+//     Serial.println("STA Failed to configure");
+//   }
+
+//   initWiFi();
+//   Serial.print("RRSI: ");
+//   Serial.println(WiFi.RSSI());
+
+//   server.begin();
+
+//   initNimbleSDK();
+
+//   /*ledcWrite(8, 50);
+//   ledcWrite(9, 50);
+//   ledcWrite(10, 50);
+//   ledcWrite(11, 50);*/
+// }
+
+void setup() {
   Serial.begin(115200);
 
-  // Configures static IP address
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
-    Serial.println("STA Failed to configure");
+  // Connect to Wi-Fi
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
+  Serial.println("\nWiFi connected");
+  Serial.println(WiFi.localIP());
 
-  initWiFi();
-  Serial.print("RRSI: ");
-  Serial.println(WiFi.RSSI());
+  // Define WebSocket event handler
+  ws.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client,
+                AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    if (type == WS_EVT_CONNECT) {
+      Serial.println("WebSocket client connected");
+    } else if (type == WS_EVT_DISCONNECT) {
+      Serial.println("WebSocket client disconnected");
+    } else if (type == WS_EVT_DATA) {
+      if (len == 9) {
+        actuator.positionCommand = *(int32_t*)&data[0];
+        actuator.forceCommand = *(int32_t*)&data[4];
+        uint8_t flags = data[8];
+        actuator.airOut = flags & 0x01;
+        actuator.airIn  = flags & 0x02;
 
+        // Debug output
+        // Serial.printf("[WS] Pos: %ld, Force: %ld, Flags: 0x%02X\n",
+        //               actuator.positionCommand, actuator.forceCommand, flags);
+      }
+    }
+  });
+
+  // Add WebSocket to server
+  server.addHandler(&ws);
   server.begin();
-
-  initNimbleSDK();
-
-  /*ledcWrite(8, 50);
-  ledcWrite(9, 50);
-  ledcWrite(10, 50);
-  ledcWrite(11, 50);*/
+  Serial.println("WebSocket server started");
 }
 
 void loop() {

@@ -7,6 +7,8 @@ function bufferToHex(buffer) {
         .join(' ');
 }
 
+export const socket = new WebSocket("ws:192.168.1.10/ws");
+
 export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, currentTimeS, airOut, airIn, isPaused) {
     // Normalize speedValue to get frequency in Hz
     const frequency = (speedValue / 1023) * MAX_FREQUENCY;
@@ -38,15 +40,18 @@ export function sendPositionUpdate(speedValue, amplitudeValue, forceValue, curre
     console.log('Hex Payload:', bufferToHex(buffer));
 
     //Send it via POST
-    fetch(PAYLOAD_ADDR, {
-        mode: 'no-cors',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/octet-stream'
-        },
-        body: buffer
-    })
-        .then(response => response.text())
-        .then(data => console.log('Response:', data))
-        .catch(error => console.error('Error:', error));
+    // fetch(PAYLOAD_ADDR, {
+    //     mode: 'no-cors',
+    //     method: 'POST',
+    //     headers: {
+    //         'Content-Type': 'application/octet-stream'
+    //     },
+    //     body: buffer
+    // })
+    //     .then(response => response.text())
+    //     .then(data => console.log('Response:', data))
+    //     .catch(error => console.error('Error:', error));
+    if(socket.readyState === WebSocket.OPEN) {
+        socket.send(buffer);
+    }
 }
